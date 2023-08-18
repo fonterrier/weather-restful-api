@@ -1,9 +1,9 @@
 package com.example.weather.controller;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import com.example.weather.persistence.dao.WeatherDescriptionRepository;
+import com.example.weather.persistence.model.WeatherDescription;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,25 +11,37 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 class WeatherControllerTest {
     private static final String WEATHER_PATH = "/weather/";
 
     @Autowired
+    private WeatherDescriptionRepository weatherDescriptionRepository;
+
+    @Autowired
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
+        Assertions.assertEquals(0, weatherDescriptionRepository.count());
     }
 
     @AfterEach
     void tearDown() {
+        weatherDescriptionRepository.deleteAll();
+        Assertions.assertEquals(0, weatherDescriptionRepository.count());
     }
 
     // happy path test
     @Test
-    void getWeather() throws Exception {
+    void getWeather_queriesDatabase() throws Exception {
+        weatherDescriptionRepository.save(new WeatherDescription("melbourne", "aus", "sunny"));
+        Assertions.assertEquals(1, weatherDescriptionRepository.count());
+
         this.mockMvc.perform(
                         get(WEATHER_PATH)
                                 .queryParam("city","Melbourne")

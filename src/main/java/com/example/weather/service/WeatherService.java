@@ -1,6 +1,8 @@
 package com.example.weather.service;
 
 import com.example.weather.exception.HttpResponseException;
+import com.example.weather.persistence.dao.WeatherDescriptionRepository;
+import com.example.weather.persistence.model.WeatherDescription;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import okhttp3.Request;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Spring Service layer - handle business logic
@@ -27,17 +30,36 @@ public class WeatherService {
 
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private final WeatherDescriptionRepository weatherDescriptionRepository;
 
     /**
      * Call the underlying OpenWeather API to get the weather description
+     * <p>
+     * Args are provided in lower case (easier String equality)
      */
     public String getWeather(@NotNull String city, @NotNull String country, @NotNull String apiKey) throws HttpResponseException, IOException {
-        // call OpenWeather GeoCoding API - get lat, lon for OpenWeather Weater API inputs
+        // call OpenWeather GeoCoding API - get lat, lon for OpenWeather Weather API inputs
+        // get from database
+        List<WeatherDescription> weatherDescList = weatherDescriptionRepository.findByCityAndCountry(city, country);
+        if (!weatherDescList.isEmpty()) {
+            String weatherDesc = weatherDescList.get(0).getWeatherDescription();
+            log.info("Found weather description {} for city {}, country {} in DB. Returning", weatherDesc, city, country);
+            return weatherDesc;
+        }
+
+        // not in database
+        // call OpenWeather GeoCoding API - get lat, lon for OpenWeather Weather API inputs
         String[] geocode = getGeocodeViaApi(city, country, apiKey);
         String lat = geocode[0];
         String lon = geocode[1];
 
-        return getWeatherDescriptionViaApi(lat, lon, apiKey);
+        String weatherDesc = getWeatherDescriptionViaApi(lat, lon, apiKey);
+
+        WeatherDescription weatherDescDbEntry = new WeatherDescription(city, country, weatherDesc);
+        // populate (INSERT) database before returning
+        weatherDescriptionRepository.save(weatherDescDbEntry);
+
+        return weatherDesc;
     }
 
     /**

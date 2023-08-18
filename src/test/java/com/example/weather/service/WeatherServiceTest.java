@@ -1,26 +1,29 @@
 package com.example.weather.service;
 
 import com.example.weather.exception.HttpResponseException;
+import com.example.weather.persistence.dao.WeatherDescriptionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import static org.mockito.Mockito.mock;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled // put real apiKey in then reenable
 class WeatherServiceTest {
     private static final OkHttpClient httpClient = new OkHttpClient().newBuilder().build();
-    private static final WeatherService weatherService = new WeatherService(httpClient, new ObjectMapper());
+    private static final WeatherService weatherService = new WeatherService(httpClient, new ObjectMapper(),
+            mock(WeatherDescriptionRepository.class));
     private static final String apiKey = "placeholder";
 
+    @Disabled // put real apiKey in then reenable
     @Test
     void getGeocodeViaApi() throws IOException {
         String[] geocode;
         try {
-            geocode = weatherService.getGeocodeViaApi("Melbourne", "AUS", apiKey);
+            geocode = weatherService.getGeocodeViaApi("melbourne", "aus", apiKey);
         } catch (HttpResponseException e) {
             throw new RuntimeException(e);
         }
@@ -31,10 +34,11 @@ class WeatherServiceTest {
     @Test
     void getGeocodeViaApi_Fails() {
         HttpResponseException ex = assertThrows(HttpResponseException.class,
-                () -> weatherService.getGeocodeViaApi("Melbourne", "AUS", "invalidApiKey"));
+                () -> weatherService.getGeocodeViaApi("Melbourne", "aus", "invalidApiKey"));
         assertEquals(401, ex.getResponseCode());
     }
 
+    @Disabled // put real apiKey in then reenable
     @Test
     void getWeatherDescriptionViaApi() throws IOException {
         String weatherDescription;
