@@ -1,0 +1,70 @@
+openapi: 3.0.3
+info:
+  version: 1.0.0
+  title: Weather API
+servers:
+  - url: http://localhost:8080/
+paths:
+  /weather:
+    get:
+      summary: Get weather description at location
+      operationId: getWeather
+      tags:
+        - weather
+      parameters:
+        - name: city
+          in: query
+          description: City name
+          required: true
+          schema:
+            type: string
+          example: Melbourne
+        - name: country
+          in: query
+          description: Country code (ISO 3166 country codes)
+          required: true
+          schema:
+            type: string
+          example: AUS
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Weather"
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+components:
+  responses:
+    ErrorResponse:
+      description: Generic error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorDetail'
+  schemas:
+    Weather:
+      type: object
+      required:
+        - description
+      properties:
+        description:
+          type: string
+          description: description of the weather
+          example: moderate rain
+    ErrorDetail:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
